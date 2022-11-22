@@ -16,6 +16,7 @@
 
 package io.cdap.plugin.gcp.bigquery.sink;
 
+import com.google.common.io.ByteStreams;
 import org.apache.avro.Schema;
 import org.apache.avro.file.CodecFactory;
 import org.apache.avro.file.DataFileConstants;
@@ -58,6 +59,7 @@ public class AvroRecordWriter extends RecordWriter<AvroKey<GenericRecord>, NullW
     this.compressionCodec = compressionCodec;
     this.outputStream = outputStream;
     this.syncInterval = syncInterval;
+    createFileWriter(Schema.create(Schema.Type.NULL), ByteStreams.nullOutputStream());
   }
   /**
    * Constructor.
@@ -91,6 +93,10 @@ public class AvroRecordWriter extends RecordWriter<AvroKey<GenericRecord>, NullW
   }
 
   private void createFileWriter(Schema writerSchema) throws IOException {
+    createFileWriter(writerSchema, outputStream);
+  }
+
+  private void createFileWriter(Schema writerSchema, OutputStream outputStream) throws IOException {
     mAvroFileWriter = new DataFileWriter<GenericRecord>(dataModel.createDatumWriter(writerSchema));
     mAvroFileWriter.setCodec(compressionCodec);
     mAvroFileWriter.setSyncInterval(syncInterval);
@@ -103,6 +109,7 @@ public class AvroRecordWriter extends RecordWriter<AvroKey<GenericRecord>, NullW
   public void close(TaskAttemptContext context) throws IOException {
     if (mAvroFileWriter != null) {
       mAvroFileWriter.close();
+      this.outputStream.close();
     }
   }
 
